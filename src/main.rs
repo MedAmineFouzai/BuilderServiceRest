@@ -43,7 +43,7 @@ async fn establish_connection() -> CollectionsContainer {
     let client = Client::with_options(client_options).unwrap();
     let db = client.database(env!("BUILDER_DATABASE"));
     CollectionsContainer {
-        category: categoriesCollection::new(db.collection(env!("categories_COLLECTION"))),
+        category: categoriesCollection::new(db.collection(env!("CATEGORIES_COLLECTION"))),
         feature: FeaturesCollection::new(db.collection(env!("FEATURES_COLLECTION"))),
         project: ProjectsCollection::new(db.collection(env!("PROJECTS_COLLECTION"))),
         prototype: PrototypesCollection::new(db.collection(env!("PROTOTYPES_COLLECTION"))),
