@@ -7,13 +7,13 @@ use mongodb::{
 };
 
 #[derive(Debug, Clone)]
-pub struct categoriesCollection {
+pub struct CategoriesCollection {
     collection: Collection,
 }
 
-impl categoriesCollection {
-    pub fn new(collection: Collection) -> categoriesCollection {
-        categoriesCollection { collection }
+impl CategoriesCollection {
+    pub fn new(collection: Collection) -> CategoriesCollection {
+        CategoriesCollection { collection }
     }
 
     pub async fn find_one<T>(&self, document: T) -> Result<Option<Document>, Error>

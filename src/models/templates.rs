@@ -49,6 +49,17 @@ impl TemplatesCollection {
             )
             .await?)
     }
+    pub async fn find_one_by_id(&self, id: &str) -> Result<Option<Document>, Error> {
+        Ok(self
+            .collection
+            .find_one(
+                doc! {
+                    "_id":ObjectId::with_string(id).unwrap()
+                },
+                None,
+            )
+            .await?)
+    }
 
     pub async fn insert_one<T>(&self, document: T) -> Result<InsertOneResult, Error>
     where
@@ -106,13 +117,30 @@ impl TemplatesCollection {
             .await?)
     }
 
-    pub async fn find_one_by_id(&self, id: &str) -> Result<Option<Document>, Error> {
+    pub async fn find_templates_by_categories_id(
+        &self,
+        categories_id: Vec<ObjectId>,
+    ) -> Result<Cursor, Error> {
         Ok(self
             .collection
-            .find_one(
-                doc! {
-                    "_id":ObjectId::with_string(id).unwrap()
-                },
+            .aggregate(
+                vec![
+                    doc! {"$match": {
+
+                    "category": {
+                            "$in":categories_id
+                            },
+                        }
+                    },
+                    doc! {
+                       "$lookup":{
+                                    "from": "Features",
+                                    "localField": "features",
+                                    "foreignField": "_id",
+                                    "as": "features"
+                                }
+                    },
+                ],
                 None,
             )
             .await?)
@@ -136,7 +164,6 @@ impl TemplatesCollection {
                             "as": "features"
                         }
                     },
-                   
                 ],
                 None,
             )

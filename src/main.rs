@@ -1,5 +1,4 @@
 mod controllers;
-// mod helper;
 mod middleware;
 mod models;
 use actix_files as fs;
@@ -13,7 +12,7 @@ use middleware::{
     logging_middelware::{get_subscriber, init_subscriber},
 };
 use models::{
-    categoriesCollection, FeaturesCollection, ProjectsCollection, PrototypesCollection,
+    CategoriesCollection, FeaturesCollection, ProjectsCollection, PrototypesCollection,
     TemplatesCollection,
 };
 use mongodb::{options::ClientOptions, Client};
@@ -23,7 +22,7 @@ use tracing_actix_web::TracingLogger;
 #[derive(Clone)]
 pub struct CollectionsContainer {
     #[allow(dead_code)]
-    category: categoriesCollection,
+    category: CategoriesCollection,
     feature: FeaturesCollection,
     project: ProjectsCollection,
     prototype: PrototypesCollection,
@@ -43,7 +42,7 @@ async fn establish_connection() -> CollectionsContainer {
     let client = Client::with_options(client_options).unwrap();
     let db = client.database(env!("BUILDER_DATABASE"));
     CollectionsContainer {
-        category: categoriesCollection::new(db.collection(env!("CATEGORIES_COLLECTION"))),
+        category: CategoriesCollection::new(db.collection(env!("CATEGORIES_COLLECTION"))),
         feature: FeaturesCollection::new(db.collection(env!("FEATURES_COLLECTION"))),
         project: ProjectsCollection::new(db.collection(env!("PROJECTS_COLLECTION"))),
         prototype: PrototypesCollection::new(db.collection(env!("PROTOTYPES_COLLECTION"))),
@@ -74,10 +73,7 @@ pub fn init_services(cfg: &mut ServiceConfig) {
         .service(controllers::get_all_templates)
         .service(controllers::delete_template)
         .service(controllers::update_template_feature)
-        
-        // .service(controllers::add_template_feature)
-        // .service(controllers::delete_template_feature)
-
+        .service(controllers::get_templates_by_categories_id)
         .service(controllers::add_template_specification)
         //prototype crud
         .service(controllers::add_prototype)

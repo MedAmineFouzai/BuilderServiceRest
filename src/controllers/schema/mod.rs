@@ -203,6 +203,11 @@ pub struct FeatureToAnyModel {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct CategoiresIds {
+    pub categories_id: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TemplateDeserializeModel {
     pub _id: ObjectId,
     pub name: String,

@@ -9,7 +9,7 @@ pub struct ErrorResponse {
 }
 
 #[derive(Debug, Display, Error)]
-pub enum CategoryCustomResponseError {
+pub enum ContentBuilderCustomResponseError {
     #[display(fmt = "internal error !")]
     InternalError,
 
@@ -28,7 +28,7 @@ pub enum CategoryCustomResponseError {
     // Timeout,
 }
 
-impl error::ResponseError for CategoryCustomResponseError {
+impl error::ResponseError for ContentBuilderCustomResponseError {
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code()).json(ErrorResponse {
             status_code: self.status_code().to_string(),
@@ -38,12 +38,12 @@ impl error::ResponseError for CategoryCustomResponseError {
 
     fn status_code(&self) -> StatusCode {
         match *self {
-            CategoryCustomResponseError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            CategoryCustomResponseError::BadClientData => StatusCode::BAD_REQUEST,
-            CategoryCustomResponseError::NotFound => StatusCode::NOT_FOUND,
-            CategoryCustomResponseError::BadHeaderData => StatusCode::FORBIDDEN,
+            ContentBuilderCustomResponseError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            ContentBuilderCustomResponseError::BadClientData => StatusCode::BAD_REQUEST,
+            ContentBuilderCustomResponseError::NotFound => StatusCode::NOT_FOUND,
+            ContentBuilderCustomResponseError::BadHeaderData => StatusCode::FORBIDDEN,
             // UserCustomResponseError::Timeout => StatusCode::GATEWAY_TIMEOUT,
-            CategoryCustomResponseError::NotAllowed => StatusCode::FORBIDDEN,
+            ContentBuilderCustomResponseError::NotAllowed => StatusCode::FORBIDDEN,
         }
     }
 }

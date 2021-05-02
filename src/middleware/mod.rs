@@ -2,7 +2,7 @@ pub mod cors;
 pub mod error;
 pub mod logging;
 pub use cors::cors_middelware;
-pub use error::CategoryCustomResponseError;
+pub use error::ContentBuilderCustomResponseError;
 pub use logging::logging_middelware;
 
 //add validators unknown for me how much long it takes still !
