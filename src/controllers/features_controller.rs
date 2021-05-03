@@ -49,7 +49,7 @@ async fn add_feature(
         .take("image")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/features_imgs"))
+            file.persist_in(PathBuf::from("./static/uploads/features"))
                 .ok()
         })
         .and_then(|file_path| {
@@ -96,7 +96,7 @@ async fn add_feature(
             feature_type: form_data["feature_type"].to_string(),
             image: File {
                 name: image.clone(),
-                src: format!("/media/static/uploads/features_imgs/{}", image.clone()),
+                src: format!("/media/static/uploads/features/{}", image.clone()),
             },
             wireframes: Some(images),
             price: form_data["price"].parse::<f64>().unwrap(),
@@ -150,7 +150,7 @@ async fn update_feature(
         .take("image")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/features_imgs"))
+            file.persist_in(PathBuf::from("./static/uploads/features"))
                 .ok()
         })
         .and_then(|file_path| {
@@ -198,7 +198,7 @@ async fn update_feature(
                 feature_type: form_data["feature_type"].to_string(),
                 image: File {
                     name: image.clone(),
-                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/features_imgs/{}", image.clone()),
+                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/features/{}", image.clone()),
                 },
                 wireframes: Some(images),
                 price: form_data["price"].parse::<f64>().unwrap(),
