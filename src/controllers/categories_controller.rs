@@ -48,7 +48,7 @@ async fn add_category(
         .take("image")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/catagorys_imgs"))
+            file.persist_in(PathBuf::from("./static/uploads/categories"))
                 .ok()
         })
         .and_then(|file_path| {
@@ -68,7 +68,7 @@ async fn add_category(
             description: form_data["description"].to_string(),
             image: File {
                 name: file_name.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/catagorys_imgs/{}", file_name.clone()),
+                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/categories/{}", file_name.clone()),
             },
         })
         .await
@@ -114,7 +114,7 @@ async fn update_category(
         .take("image")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/catagorys_imgs"))
+            file.persist_in(PathBuf::from("./static/uploads/categories"))
                 .ok()
         })
         .and_then(|file_path| {
@@ -136,7 +136,7 @@ async fn update_category(
                 description: form_data["description"].to_string(),
                 image: File {
                     name: file_name.clone(),
-                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/catagorys_imgs/{}", file_name.clone()),
+                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/categories/{}", file_name.clone()),
                 },
             },
         )
