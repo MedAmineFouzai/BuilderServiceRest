@@ -94,7 +94,7 @@ async fn add_template(
         .take("image")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/template_imgs"))
+            file.persist_in(PathBuf::from("./static/uploads/templates"))
                 .ok()
         })
         .unwrap()
@@ -113,7 +113,7 @@ async fn add_template(
             // catagorys: Some(vec![]), // form_data["catagorys"].to_string(),
             image: File {
                 name: image.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/features_imgs/{}", image.clone()),
+                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/templates/{}", image.clone()),
             },
             category: ObjectId::with_string(&form_data["category"].to_string()).unwrap(),
             features: Some(vec![]),
@@ -168,7 +168,7 @@ async fn update_template(
         .take("image")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/template_imgs"))
+            file.persist_in(PathBuf::from("./static/uploads/templates"))
                 .ok()
         })
         .unwrap()
@@ -189,7 +189,7 @@ async fn update_template(
                 // catagorys: Some(vec![]), // form_data["catagorys"].to_string(),
                 image: File {
                     name: image.clone(),
-                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/features_imgs/{}", image.clone()),
+                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/templates/{}", image.clone()),
                 },
                 category: ObjectId::with_string(&form_data["category"].to_string()).unwrap(),
                 features: Some(vec![]),
