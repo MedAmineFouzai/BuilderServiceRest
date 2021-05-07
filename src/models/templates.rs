@@ -90,7 +90,7 @@ impl TemplatesCollection {
             .await?)
     }
 
-    pub async fn update_one<T>(&self, user_id: &str, document: T) -> Result<Option<Document>, Error>
+    pub async fn update_one<T>(&self, id: &str, document: T) -> Result<Option<Document>, Error>
     where
         T: serde::Serialize,
     {
@@ -98,7 +98,7 @@ impl TemplatesCollection {
             .collection
             .find_one_and_update(
                 doc! {
-                    "_id":ObjectId::with_string(user_id).unwrap()
+                    "_id":ObjectId::with_string(id).unwrap()
                 },
                 doc! {
                       "$set":bson::to_bson(&document)

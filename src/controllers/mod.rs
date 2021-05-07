@@ -5,11 +5,12 @@ pub mod prototypes_controller;
 pub mod schema;
 pub mod templates_controller;
 pub use categories_controller::{
-    add_category, delete_category, get_all_categories, get_category_by_id, update_category,
+    delete_category, get_all_categories, get_category_by_id, update_category,
+    create_category
 };
 pub use features_controller::{
-    add_feature, add_feature_wireframe, delete_feature, delete_feature_wireframe, get_all_features,
-    get_feature_by_id, update_feature,
+    add_feature_wireframe, delete_feature, delete_feature_wireframe, get_all_features,
+    get_feature_by_id, update_feature,create_feature
 };
 pub use projects_controller::{
     add_design_project, add_full_build_project, add_mvp_project, add_project, add_project_feature,
@@ -20,7 +21,7 @@ pub use prototypes_controller::{
     add_prototype, delete_prototype, get_prototype_by_template_id, update_prototype,
 };
 pub use templates_controller::{
-    add_template, add_template_specification, delete_template, get_all_templates,
+    create_template, add_template_specification, delete_template, get_all_templates,
     get_template_by_id, get_templates_by_categories_id, update_template, update_template_feature,
 };
 

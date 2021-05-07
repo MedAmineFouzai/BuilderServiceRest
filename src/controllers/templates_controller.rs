@@ -1,8 +1,8 @@
 extern crate jsonwebtoken as jwt;
 use super::schema::{
     CategoiresIds, FeatureToAnyModel, File, Introduction, NonFunctionalRequirements,
-    OverallDescription, SerlizedId, Specification, Template, TemplateDeserializeModel,
-    TemplateReafactorDeserializeModel, TemplateResponseModel, TemplateResponseRefactorModel,
+    OverallDescription, SerlizedId, Specification, Template, TemplateDeserializeModel,TemplateObjectWithId,
+    TemplateReafactorDeserializeModel, TemplateResponseModel, TemplateResponseRefactorModel,TemplateObject
 };
 use crate::middleware::error::ContentBuilderCustomResponseError;
 use actix_web::{
@@ -15,7 +15,7 @@ use bson::oid::ObjectId;
 use futures::stream::StreamExt;
 use std::path::PathBuf;
 
-#[get("template/all")]
+#[get("template/all")]// no need 
 async fn get_all_templates(
     app_state: web::Data<crate::AppState>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
@@ -42,7 +42,7 @@ async fn get_all_templates(
     }
 }
 
-#[post("template/categories/all")]
+#[post("template/categories/all")] //  no need
 async fn get_templates_by_categories_id(
     app_state: web::Data<crate::AppState>,
     categoires: Json<CategoiresIds>,
@@ -82,46 +82,112 @@ async fn get_templates_by_categories_id(
     }
 }
 
-#[post("template/add")]
-async fn add_template(
+// #[post("template/add")]//todo
+// async fn add_template(
+//     app_state: web::Data<crate::AppState>,
+//     mut parts: Parts,
+// ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+//     let form_data = parts.texts.as_hash_map();
+
+//     let image = parts
+//         .files
+//         .take("image")
+//         .pop()
+//         .and_then(|file| {
+//             file.persist_in(PathBuf::from("./static/uploads/template_imgs"))
+//                 .ok()
+//         })
+//         .unwrap()
+//         .file_name()
+//         .unwrap()
+//         .to_str()
+//         .unwrap()
+//         .to_string();
+
+//     match app_state
+//         .container
+//         .template
+//         .insert_one(Template {
+//             name: form_data["name"].to_string(),
+//             description: form_data["description"].to_string(),
+//             // catagorys: Some(vec![]), // form_data["catagorys"].to_string(),
+//             image: File {
+//                 name: image.clone(),
+//                 src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/features_imgs/{}", image.clone()),
+//             },
+//             category: ObjectId::with_string(&form_data["category"].to_string()).unwrap(),
+//             features: Some(vec![]),
+//             specification: Some(Specification::new()),
+//             // prototype_id: Some(
+//             //     // ObjectId::with_string(&form_data["prototype_id"].to_string()).unwrap(),
+//             //     ObjectId::new()
+//             // ),
+//         })
+//         .await
+//     {
+//         Ok(id) => match id.inserted_id.as_object_id() {
+//             Some(id) => {
+//                 match app_state
+//                     .container
+//                     .template
+//                     .find_one_by_id(&id.to_string())
+//                     .await
+//                 {
+//                     Ok(result) => {
+//                         if result != None {
+//                             match bson::from_document::<TemplateDeserializeModel>(result.unwrap()) {
+//                                 Ok(template) => Ok(HttpResponse::Ok()
+//                                     .json(TemplateResponseModel::build_template(template))),
+//                                 Err(_bson_de_error) => {
+//                                     Err(ContentBuilderCustomResponseError::InternalError)
+//                                 }
+//                             }
+//                         } else {
+//                             Err(ContentBuilderCustomResponseError::NotFound)
+//                         }
+//                     }
+//                     Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//                 }
+//             }
+//             None => Err(ContentBuilderCustomResponseError::InternalError),
+//         },
+//         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//     }
+//     // Ok(HttpResponse::Ok().body("ok"))
+// }
+
+#[post("template/create")]// no need
+async fn create_template(
     app_state: web::Data<crate::AppState>,
-    mut parts: Parts,
+    template:Json<TemplateObject>
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let form_data = parts.texts.as_hash_map();
 
-    let image = parts
-        .files
-        .take("image")
-        .pop()
-        .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/templates"))
-                .ok()
-        })
-        .unwrap()
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
-
-    match app_state
+    match serde_json::to_string(&template.into_inner()).and_then(|template| {
+        match serde_json::from_str::<TemplateObject>(&template) {
+            Ok(template) => Ok(template),
+            Err(serde_error) => Err(serde_error.into()),
+        }
+    }) {
+    Ok(template)=>{
+        match app_state
         .container
         .template
-        .insert_one(Template {
-            name: form_data["name"].to_string(),
-            description: form_data["description"].to_string(),
-            // catagorys: Some(vec![]), // form_data["catagorys"].to_string(),
-            image: File {
-                name: image.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/templates/{}", image.clone()),
-            },
-            category: ObjectId::with_string(&form_data["category"].to_string()).unwrap(),
-            features: Some(vec![]),
-            specification: Some(Specification::new()),
-            // prototype_id: Some(
-            //     // ObjectId::with_string(&form_data["prototype_id"].to_string()).unwrap(),
-            //     ObjectId::new()
-            // ),
+        .insert_one(Template{
+            name: template.name,
+            description: template.description,
+            category: ObjectId::with_string(&template.category).unwrap(),
+            features: Some(match template.features{
+                Some(features)=>features.into_iter().map(|object_id|{
+                    ObjectId::with_string(&object_id).unwrap()
+                }).collect::<Vec<ObjectId>>(),
+                None=>vec![]
+            }),
+            image: template.image,
+            specification:Some( match template.specification{
+                Some(specification)=>specification,
+                None=>Specification::new()
+            }),
+            
         })
         .await
     {
@@ -130,21 +196,26 @@ async fn add_template(
                 match app_state
                     .container
                     .template
-                    .find_one_by_id(&id.to_string())
+                    .refactor_template(&id.to_string())
                     .await
                 {
-                    Ok(result) => {
-                        if result != None {
-                            match bson::from_document::<TemplateDeserializeModel>(result.unwrap()) {
-                                Ok(template) => Ok(HttpResponse::Ok()
-                                    .json(TemplateResponseModel::build_template(template))),
-                                Err(_bson_de_error) => {
-                                    Err(ContentBuilderCustomResponseError::InternalError)
-                                }
-                            }
-                        } else {
-                            Err(ContentBuilderCustomResponseError::NotFound)
-                        }
+                    Ok(cursor) => {
+                        let templates: Vec<TemplateResponseRefactorModel> = cursor
+                        .map(|doc| {
+                            let template =
+                                bson::from_document::<TemplateReafactorDeserializeModel>(match doc {
+                                    Ok(template) => match template {
+                                        template => template,
+                                    },
+                                    Err(_mongodb_error) => bson::Document::new(),
+                                })
+                                .ok();
+                            println!("Tempalte Dezrlized: {:?}", template);
+                            TemplateResponseRefactorModel::build_template(template.unwrap())
+                        })
+                        .collect()
+                        .await;
+                    Ok(HttpResponse::Ok().json(templates.last()))
                     }
                     Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
                 }
@@ -153,68 +224,87 @@ async fn add_template(
         },
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
+    },
+    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+
+    }
+
+   
     // Ok(HttpResponse::Ok().body("ok"))
 }
 
-#[put("template/update")]
+
+#[put("template/update")]//no need
 async fn update_template(
     app_state: web::Data<crate::AppState>,
-    mut parts: Parts,
+   template:Json<TemplateObjectWithId>
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let form_data = parts.texts.as_hash_map();
 
-    let image = parts
-        .files
-        .take("image")
-        .pop()
-        .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/templates"))
-                .ok()
-        })
-        .unwrap()
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
-
-    match app_state
+    match serde_json::to_string(&template.into_inner()).and_then(|template| {
+        match serde_json::from_str::<TemplateObjectWithId>(&template) {
+            Ok(template) => Ok(template),
+            Err(serde_error) => Err(serde_error.into()),
+        }
+    }) {
+    Ok(template)=>{
+        match app_state
         .container
         .template
-        .update_one(
-            &form_data["id"].to_string(),
-            Template {
-                name: form_data["name"].to_string(),
-                description: form_data["description"].to_string(),
-                // catagorys: Some(vec![]), // form_data["catagorys"].to_string(),
-                image: File {
-                    name: image.clone(),
-                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/templates/{}", image.clone()),
-                },
-                category: ObjectId::with_string(&form_data["category"].to_string()).unwrap(),
-                features: Some(vec![]),
-                specification: Some(Specification::new()),
-                // prototype_id: Some(
-                //     // ObjectId::with_string(&form_data["prototype_id"].to_string()).unwrap(),
-                //     ObjectId::new()
-                // ),
-            },
-        )
+        .update_one(&template.id,Template{
+            name: template.name,
+            description: template.description,
+            category: ObjectId::with_string(&template.category).unwrap(),
+            features: Some(match template.features{
+                Some(features)=>features.into_iter().map(|object_id|{
+                    ObjectId::with_string(&object_id).unwrap()
+                }).collect::<Vec<ObjectId>>(),
+                None=>vec![]
+            }),
+            image: template.image,
+            specification:Some( match template.specification{
+                Some(specification)=>specification,
+                None=>Specification::new()
+            }),
+            
+        })
         .await
     {
-        Ok(result) => {
-            if result != None {
-                match bson::from_document::<TemplateDeserializeModel>(result.unwrap()) {
-                    Ok(template) => Ok(
-                        HttpResponse::Ok().json(TemplateResponseModel::build_template(template))
-                    ),
-                    Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
+        Ok(document) => match document{
+            Some(document) => {
+                match app_state
+                    .container
+                    .template
+                    .refactor_template(&document.get_object_id("_id").unwrap().to_string())
+                    .await
+                {
+                    Ok(cursor) => {
+                        let templates: Vec<TemplateResponseRefactorModel> = cursor
+                        .map(|doc| {
+                            let template =
+                                bson::from_document::<TemplateReafactorDeserializeModel>(match doc {
+                                    Ok(template) => match template {
+                                        template => template,
+                                    },
+                                    Err(_mongodb_error) => bson::Document::new(),
+                                })
+                                .ok();
+                            println!("Tempalte Dezrlized: {:?}", template);
+                            TemplateResponseRefactorModel::build_template(template.unwrap())
+                        })
+                        .collect()
+                        .await;
+                    Ok(HttpResponse::Ok().json(templates.last()))
+                    }
+                    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
                 }
-            } else {
-                Err(ContentBuilderCustomResponseError::NotFound)
             }
-        }
+             None=> Err(ContentBuilderCustomResponseError::NotFound),
+        },
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+    }
+    },
+    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+
     }
     // Ok(HttpResponse::Ok().body("ok"))
 }
@@ -253,7 +343,7 @@ async fn delete_template(
     }
 }
 
-#[put("template/feature/update")]
+#[put("template/feature/update")]// no need
 async fn update_template_feature(
     app_state: web::Data<crate::AppState>,
     data: Json<FeatureToAnyModel>,
@@ -301,7 +391,7 @@ async fn update_template_feature(
     // Ok(HttpResponse::Ok().body("ok"))
 }
 
-#[post("template/get")]
+#[post("template/get")]//no need
 async fn get_template_by_id(
     app_state: web::Data<crate::AppState>,
     template_data: Json<SerlizedId>,
@@ -352,7 +442,7 @@ async fn get_template_by_id(
     }
 }
 
-#[put("template/specification/add")]
+#[put("template/specification/add")]// no need
 async fn add_template_specification(
     app_state: web::Data<crate::AppState>,
     mut parts: Parts,

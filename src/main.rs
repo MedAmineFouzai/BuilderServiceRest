@@ -3,7 +3,7 @@ mod middleware;
 mod models;
 use actix_files as fs;
 use actix_web::{
-    web::{scope, ServiceConfig},
+    web::{scope, ServiceConfig,JsonConfig},
     App, HttpServer,
 };
 use load_dotenv::load_dotenv;
@@ -53,13 +53,13 @@ async fn establish_connection() -> CollectionsContainer {
 pub fn init_services(cfg: &mut ServiceConfig) {
     cfg
         //feature crud
-        .service(controllers::add_category)
+        .service(controllers::create_category)
         .service(controllers::update_category)
         .service(controllers::get_all_categories)
         .service(controllers::get_category_by_id)
         .service(controllers::delete_category)
         //feature crud
-        .service(controllers::add_feature)
+        .service(controllers::create_feature)
         .service(controllers::update_feature)
         .service(controllers::delete_feature)
         .service(controllers::get_all_features)
@@ -67,7 +67,7 @@ pub fn init_services(cfg: &mut ServiceConfig) {
         .service(controllers::add_feature_wireframe)
         .service(controllers::delete_feature_wireframe)
         //template crud
-        .service(controllers::add_template)
+        .service(controllers::create_template)
         .service(controllers::update_template)
         .service(controllers::get_template_by_id)
         .service(controllers::get_all_templates)
@@ -114,7 +114,7 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 container: collection_container,
             })
-            // .data(awmp::Parts::configure(|cfg| cfg.with_file_limit(100000)))
+            .app_data(JsonConfig::default().limit(1024 * 1024 * 50))
             .service(fs::Files::new("/media", "/static/uploads/.").show_files_listing())
             .service(scope("/api/v1/builder/").configure(init_services))
     })

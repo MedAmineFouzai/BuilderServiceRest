@@ -75,14 +75,30 @@ pub struct FeatureDeserializeModel {
     pub repo: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateFeatureWireframesModel {
+    pub id: String,
+    pub wireframes: Vec<FileWithOutOId>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Feature {
     pub name: String,
     pub description: String,
-    // pub catagorys: Option<Vec<Category>>,
     pub feature_type: String,
     pub image: File,
     pub wireframes: Option<Vec<FileWithId>>,
+    pub price: f64,
+    pub repo: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FeatureObject {
+    pub name: String,
+    pub description: String,
+    pub feature_type: String,
+    pub image: File,
+    pub wireframes: Option<Vec<FileWithOutOId>>,
     pub price: f64,
     pub repo: String,
 }
@@ -135,6 +151,31 @@ pub struct Template {
     pub specification: Option<Specification>,
     // pub prototype_id: Option<ObjectId>,
 }
+
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TemplateObject {
+    pub name: String,
+    pub description: String,
+    pub category: String,
+    pub features: Option<Vec<String>>,
+    pub image: File,
+    pub specification: Option<Specification>,
+    // pub prototype_id: Option<ObjectId>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TemplateObjectWithId {
+    pub id :String,
+    pub name: String,
+    pub description: String,
+    pub category: String,
+    pub features: Option<Vec<String>>,
+    pub image: File,
+    pub specification: Option<Specification>,
+    // pub prototype_id: Option<ObjectId>,
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateReafactorDeserializeModel {

@@ -127,13 +127,12 @@ impl FeaturesCollection {
             .await?)
     }
 
-    pub async fn add_wireframe<T>(
+    pub async fn add_wireframe(
         &self,
         feautre_id: &str,
-        document: T,
+        wireframes:Vec<Document>,
     ) -> Result<Option<Document>, Error>
-    where
-        T: serde::Serialize,
+
     {
         Ok(self
             .collection
@@ -143,11 +142,9 @@ impl FeaturesCollection {
                 },
                 doc! {
                   "$push":{
-                      "wireframes":bson::to_bson(&document)
-                      .unwrap()
-                      .as_document()
-                      .unwrap()
-                      .clone(),
+                    "wireframes":{
+                        "$each":wireframes
+                        }
                   }
                 },
                 Some(

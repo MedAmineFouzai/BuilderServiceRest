@@ -37,126 +37,126 @@ async fn get_all_categories(
     }
 }
 
-#[post("category/add")]
-async fn add_category(
-    app_state: web::Data<crate::AppState>,
-    mut parts: Parts,
-) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let form_data = parts.texts.as_hash_map();
-    let file_name = parts
-        .files
-        .take("image")
-        .pop()
-        .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/categories"))
-                .ok()
-        })
-        .and_then(|file_path| {
-            file_path.file_name().and_then(|os_path| {
-                os_path
-                    .to_str()
-                    .and_then(|sentaized_path| Some(sentaized_path.to_string()))
-            })
-        })
-        .unwrap();
+// #[post("category/add")]
+// async fn add_category(
+//     app_state: web::Data<crate::AppState>,
+//     mut parts: Parts,
+// ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+//     let form_data = parts.texts.as_hash_map();
+//     let file_name = parts
+//         .files
+//         .take("image")
+//         .pop()
+//         .and_then(|file| {
+//             file.persist_in(PathBuf::from("./static/uploads/catagorys_imgs"))
+//                 .ok()
+//         })
+//         .and_then(|file_path| {
+//             file_path.file_name().and_then(|os_path| {
+//                 os_path
+//                     .to_str()
+//                     .and_then(|sentaized_path| Some(sentaized_path.to_string()))
+//             })
+//         })
+//         .unwrap();
 
-    match app_state
-        .container
-        .category
-        .insert_one(Category {
-            name: form_data["name"].to_string(),
-            description: form_data["description"].to_string(),
-            image: File {
-                name: file_name.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/categories/{}", file_name.clone()),
-            },
-        })
-        .await
-    {
-        Ok(category_id) => match category_id.inserted_id.as_object_id() {
-            Some(object_id) => {
-                match app_state
-                    .container
-                    .category
-                    .find_one_by_id(&object_id.to_string())
-                    .await.and_then(|document|{Ok(match document {
-                        Some(document)=>document,
-                        None => Document::new()
-                    })})
-                {
-                    Ok(document) =>match  document {
-                            document=>match bson::from_document::<CategoryDeserializeModel>(document){
-                                Ok(category) => Ok(HttpResponse::Ok()
-                                    .json(CategoryResponseModel::build_category(category))),
-                                Err(_bson_de_error) => {
-                                    Err(ContentBuilderCustomResponseError::InternalError)
-                                }
-                            }
-                    }
-                    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-                }
-            }
-            None => Err(ContentBuilderCustomResponseError::InternalError),
-        },
-        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-}
+//     match app_state
+//         .container
+//         .category
+//         .insert_one(Category {
+//             name: form_data["name"].to_string(),
+//             description: form_data["description"].to_string(),
+//             image: File {
+//                 name: file_name.clone(),
+//                 src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/catagorys_imgs/{}", file_name.clone()),
+//             },
+//         })
+//         .await
+//     {
+//         Ok(category_id) => match category_id.inserted_id.as_object_id() {
+//             Some(object_id) => {
+//                 match app_state
+//                     .container
+//                     .category
+//                     .find_one_by_id(&object_id.to_string())
+//                     .await.and_then(|document|{Ok(match document {
+//                         Some(document)=>document,
+//                         None => Document::new()
+//                     })})
+//                 {
+//                     Ok(document) =>match  document {
+//                             document=>match bson::from_document::<CategoryDeserializeModel>(document){
+//                                 Ok(category) => Ok(HttpResponse::Ok()
+//                                     .json(CategoryResponseModel::build_category(category))),
+//                                 Err(_bson_de_error) => {
+//                                     Err(ContentBuilderCustomResponseError::InternalError)
+//                                 }
+//                             }
+//                     }
+//                     Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//                 }
+//             }
+//             None => Err(ContentBuilderCustomResponseError::InternalError),
+//         },
+//         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//     }
+// }
 
-#[put("category/update")]
-async fn update_category(
-    app_state: web::Data<crate::AppState>,
-    mut parts: Parts,
-) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let form_data = parts.texts.as_hash_map();
+// #[put("category/update")]
+// async fn update_category(
+//     app_state: web::Data<crate::AppState>,
+//     mut parts: Parts,
+// ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+//     let form_data = parts.texts.as_hash_map();
 
-    let file_name = parts
-        .files
-        .take("image")
-        .pop()
-        .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/categories"))
-                .ok()
-        })
-        .and_then(|file_path| {
-            file_path.file_name().and_then(|os_path| {
-                os_path
-                    .to_str()
-                    .and_then(|sentaized_path| Some(sentaized_path.to_string()))
-            })
-        })
-        .unwrap();
+//     let file_name = parts
+//         .files
+//         .take("image")
+//         .pop()
+//         .and_then(|file| {
+//             file.persist_in(PathBuf::from("./static/uploads/catagorys_imgs"))
+//                 .ok()
+//         })
+//         .and_then(|file_path| {
+//             file_path.file_name().and_then(|os_path| {
+//                 os_path
+//                     .to_str()
+//                     .and_then(|sentaized_path| Some(sentaized_path.to_string()))
+//             })
+//         })
+//         .unwrap();
 
-    match app_state
-        .container
-        .category
-        .update_one(
-            &form_data["id"].to_string(),
-            Category {
-                name: form_data["name"].to_string(),
-                description: form_data["description"].to_string(),
-                image: File {
-                    name: file_name.clone(),
-                    src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/categories/{}", file_name.clone()),
-                },
-            },
-        )
-        .await.and_then(|document|{Ok(match document {
-            Some(document)=>document,
-            None => Document::new()
-        })})
-    {
-        Ok(document) =>match  document {
-            document=>match bson::from_document::<CategoryDeserializeModel>(document){
-                Ok(category) => Ok(HttpResponse::Ok()
-                    .json(CategoryResponseModel::build_category(category))),
-                Err(_bson_de_error) => {
-                    Err(ContentBuilderCustomResponseError::NotFound)
-                }
-            }
-    }
-        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-}
+//     match app_state
+//         .container
+//         .category
+//         .update_one(
+//             &form_data["id"].to_string(),
+//             Category {
+//                 name: form_data["name"].to_string(),
+//                 description: form_data["description"].to_string(),
+//                 image: File {
+//                     name: file_name.clone(),
+//                     src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/catagorys_imgs/{}", file_name.clone()),
+//                 },
+//             },
+//         )
+//         .await.and_then(|document|{Ok(match document {
+//             Some(document)=>document,
+//             None => Document::new()
+//         })})
+//     {
+//         Ok(document) =>match  document {
+//             document=>match bson::from_document::<CategoryDeserializeModel>(document){
+//                 Ok(category) => Ok(HttpResponse::Ok()
+//                     .json(CategoryResponseModel::build_category(category))),
+//                 Err(_bson_de_error) => {
+//                     Err(ContentBuilderCustomResponseError::NotFound)
+//                 }
+//             }
+//     }
+//         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//     }
+// }
 
 #[delete("category/delete")]
 async fn delete_category(
@@ -212,4 +212,101 @@ async fn get_category_by_id(
         },
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
+}
+
+
+#[post("category/create")]
+async fn create_category(
+    app_state: web::Data<crate::AppState>,
+    category:Json<Category>
+) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+    match serde_json::to_string(&category.into_inner()).and_then(|category_data| {
+        match serde_json::from_str::<Category>(&category_data) {
+            Ok(category) => Ok(category),
+            Err(serde_error) => Err(serde_error.into()),
+        }
+    }) {
+        Ok(category)=>{
+    match app_state
+        .container
+        .category
+        .insert_one(category)
+        .await
+    {
+        Ok(category_id) => match category_id.inserted_id.as_object_id() {
+            Some(object_id) => {
+                match app_state
+                    .container
+                    .category
+                    .find_one_by_id(&object_id.to_string())
+                    .await.and_then(|document|{Ok(match document {
+                        Some(document)=>document,
+                        None => Document::new()
+                    })})
+                {
+                    Ok(document) =>match  document {
+                            document=>match bson::from_document::<CategoryDeserializeModel>(document){
+                                Ok(category) => Ok(HttpResponse::Ok()
+                                    .json(CategoryResponseModel::build_category(category))),
+                                Err(_bson_de_error) => {
+                                    Err(ContentBuilderCustomResponseError::InternalError)
+                                }
+                            }
+                    }
+                    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                }
+            }
+            None => Err(ContentBuilderCustomResponseError::InternalError),
+        },
+        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+    }
+    },
+    Err(e)=>Err(ContentBuilderCustomResponseError::InternalError)
+    }
+
+}
+
+#[put("category/update")]
+async fn update_category(
+    app_state: web::Data<crate::AppState>,
+    category:Json<CategoryResponseModel>
+) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+    match serde_json::to_string(&category.into_inner()).and_then(|category_data| {
+        match serde_json::from_str::<CategoryResponseModel>(&category_data) {
+            Ok(category) => Ok(category),
+            Err(serde_error) => Err(serde_error.into()),
+        }
+    }) {
+        Ok(category)=>{
+       match app_state
+        .container
+        .category
+        .update_one(
+            &category.id,
+            Category {
+                name: category.name,
+                description: category.description,
+                image:category.image,
+            },
+        )
+        .await.and_then(|document|{Ok(match document {
+            Some(document)=>document,
+            None => Document::new()
+        })})
+    {
+        Ok(document) =>match  document {
+            document=>match bson::from_document::<CategoryDeserializeModel>(document){
+                Ok(category) => Ok(HttpResponse::Ok()
+                    .json(CategoryResponseModel::build_category(category))),
+                Err(_bson_de_error) => {
+                    Err(ContentBuilderCustomResponseError::NotFound)
+                }
+            }
+    }
+        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+    }
+    },
+    Err(e)=>Err(ContentBuilderCustomResponseError::InternalError)
+    }
+
 }

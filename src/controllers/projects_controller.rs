@@ -525,7 +525,7 @@ async fn add_mvp_project(
         .take("file")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/projects"))
+            file.persist_in(PathBuf::from("./static/uploads/projects_files"))
                 .ok()
         })
         .unwrap()
@@ -542,7 +542,7 @@ async fn add_mvp_project(
             &form_data["id"].to_string(),
             File {
                 name: file_name.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/projects/{}", file_name.clone()),
+                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/projects_files/{}", file_name.clone()),
             },
         )
         .await
@@ -601,7 +601,7 @@ async fn add_design_project(
         .take("file")
         .pop()
         .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/projects"))
+            file.persist_in(PathBuf::from("./static/uploads/projects_files"))
                 .ok()
         })
         .unwrap()
@@ -618,7 +618,7 @@ async fn add_design_project(
             &form_data["id"].to_string(),
             File {
                 name: file_name.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/projects/{}", file_name.clone()),
+                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/projects_files/{}", file_name.clone()),
             },
         )
         .await
