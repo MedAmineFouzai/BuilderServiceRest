@@ -77,17 +77,17 @@ pub fn init_services(cfg: &mut ServiceConfig) {
         .service(controllers::add_template_specification)
         //prototype crud
         .service(controllers::add_prototype)
-        .service(controllers::delete_prototype)
+        // .service(controllers::delete_prototype)
         .service(controllers::get_prototype_by_template_id)
         .service(controllers::update_prototype)
         //project crud
         .service(controllers::add_project)
         .service(controllers::get_project_by_id)
         .service(controllers::get_all_project_by_client_id)
-        .service(controllers::archive_project)
+        .service(controllers::change_project_state)
         .service(controllers::get_all_projects)
-        .service(controllers::add_project_feature)
-        .service(controllers::delete_project_feature)
+        // .service(controllers::add_project_feature)
+        // .service(controllers::delete_project_feature)
         .service(controllers::update_project)
         .service(controllers::generate_project_specification)
         .service(controllers::add_full_build_project)
@@ -114,7 +114,9 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 container: collection_container,
             })
-            .app_data(JsonConfig::default().limit(1024 * 1024 * 50))
+            .app_data(JsonConfig::default().limit(4096*512))
+            //2MO
+            // limit(1024 * 1024 * 50))//50MO
             .service(fs::Files::new("/media", "/static/uploads/.").show_files_listing())
             .service(scope("/api/v1/builder/").configure(init_services))
     })

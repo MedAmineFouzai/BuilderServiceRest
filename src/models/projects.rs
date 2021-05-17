@@ -105,7 +105,7 @@ impl ProjectsCollection {
             .await?)
     }
 
-    pub async fn update_one<T>(&self, user_id: &str, document: T) -> Result<Option<Document>, Error>
+    pub async fn update_one<T>(&self, user_id: &str,name:&str, image: T) -> Result<Option<Document>, Error>
     where
         T: serde::Serialize,
     {
@@ -113,14 +113,18 @@ impl ProjectsCollection {
             .collection
             .find_one_and_update(
                 doc! {
-                    "client_id":ObjectId::with_string(user_id).unwrap()
+                    "_id":ObjectId::with_string(user_id).unwrap()
                 },
                 doc! {
-                      "$set":bson::to_bson(&document)
+                      "$set":{
+                        "name":name,
+                        "image":bson::to_bson(&image)
                         .unwrap()
                         .as_document()
                         .unwrap()
                         .clone()
+                      }
+                     
 
                 },
                 Some(
@@ -308,7 +312,7 @@ impl ProjectsCollection {
                 },
                 doc! {
                       "$set":{
-                          "propsal":bson::to_bson(&propsal)
+                          "proposal":bson::to_bson(&propsal)
                           .unwrap()
                           .as_document()
                           .unwrap()

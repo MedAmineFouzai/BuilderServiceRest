@@ -14,41 +14,43 @@ use super::schema::{
     ProtoTypeRefactorDeserializeModel, ProtoTypeRequest, ProtoTypeResponseModel, SerlizedId,
 };
 
-#[delete("prototype/delete")]
-async fn delete_prototype(
-    app_state: web::Data<crate::AppState>,
-    prototype_data: Json<SerlizedId>,
-) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    match app_state
-        .container
-        .prototype
-        .delete_one(&prototype_data.id)
-        .await
-        .and_then(|document| {
-            let feature = match document {
-                Some(doc) => doc,
-                None => Document::new(),
-            };
-            Ok(feature)
-        }) {
-        Ok(result) => match result {
-            result => {
-                if !result.is_empty() {
-                    match bson::from_document::<ProtoTypeDeserializeModel>(result) {
-                        Ok(prototype) => Ok(HttpResponse::Ok().json(json!({
-                            "id": prototype._id.to_string(),
-                            "template_id": prototype.template_id.to_string(),
-                        }))),
-                        Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
-                    }
-                } else {
-                    Err(ContentBuilderCustomResponseError::NotFound)
-                }
-            }
-        },
-        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-}
+
+// #[delete("prototype/delete")]
+// async fn delete_prototype(
+//     app_state: web::Data<crate::AppState>,
+//     prototype_data: Json<SerlizedId>,
+// ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+//     match app_state
+//         .container
+//         .prototype
+//         .delete_one(&prototype_data.id)
+//         .await
+//         .and_then(|document| {
+//             let feature = match document {
+//                 Some(doc) => doc,
+//                 None => Document::new(),
+//             };
+//             Ok(feature)
+//         }) {
+//         Ok(result) => match result {
+//             result => {
+//                 if !result.is_empty() {
+//                     match bson::from_document::<ProtoTypeDeserializeModel>(result) {
+//                         Ok(prototype) => Ok(HttpResponse::Ok().json(json!({
+//                             "id": prototype._id.to_string(),
+//                             "template_id": prototype.template_id.to_string(),
+//                         }))),
+//                         Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//                     }
+//                 } else {
+//                     Err(ContentBuilderCustomResponseError::NotFound)
+//                 }
+//             }
+//         },
+//         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//     }
+// }
+
 
 #[post("prototype/add")]
 async fn add_prototype(
@@ -100,7 +102,7 @@ async fn add_prototype(
                                     Err(_mongodb_error) => bson::Document::new(),
                                 })
                                 .ok();
-                                println!("Prototype Dezrlized: {:?}", prototype);
+                                // println!("Prototype Dezrlized: {:?}", prototype);
                                 ProtoTypeResponseModel::build_prototype(prototype.unwrap())
                             })
                             .collect()
@@ -142,7 +144,7 @@ async fn get_prototype_by_template_id(
                             Err(_mongodb_error) => bson::Document::new(),
                         })
                         .ok();
-                    println!("Prototype Dezrlized: {:?}", prototype);
+                    // println!("Prototype Dezrlized: {:?}", prototype);
                     ProtoTypeResponseModel::build_prototype(prototype.unwrap())
                 })
                 .collect()
@@ -162,7 +164,7 @@ async fn update_prototype(
     app_state: web::Data<crate::AppState>,
     prototype_data: Json<ProtoTypeRequest>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    println!("{:?}", prototype_data);
+    // println!("{:?}", prototype_data);
     match app_state
         .container
         .prototype
@@ -210,7 +212,7 @@ async fn update_prototype(
                                     Err(_mongodb_error) => bson::Document::new(),
                                 })
                                 .ok();
-                                println!("Prototype Dezrlized: {:?}", prototype);
+                                // println!("Prototype Dezrlized: {:?}", prototype);
                                 ProtoTypeResponseModel::build_prototype(prototype.unwrap())
                             })
                             .collect()

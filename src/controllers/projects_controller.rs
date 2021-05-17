@@ -1,7 +1,7 @@
 extern crate jsonwebtoken as jwt;
 use super::schema::{
     FeatureToAnyModel, File, Project, ProjectDeserializeModel, ProjectFullBuild, ProjectProposal,
-    ProjectRequestModel, ProjectResponseModel, ProjectState, SerlizedId,
+    ProjectRequestModel, ProjectResponseModel, ProjectState, SerlizedId,ProjectUpdateModel
 };
 use crate::middleware::error::ContentBuilderCustomResponseError;
 use actix_web::{
@@ -19,7 +19,7 @@ async fn add_project(
     app_state: web::Data<crate::AppState>,
     project_data: Json<ProjectRequestModel>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    println!("{:?}", project_data);
+
     match app_state
         .container
         .project
@@ -27,6 +27,7 @@ async fn add_project(
             client_id: ObjectId::with_string(&project_data.client_id).unwrap(),
             name: project_data.name.clone(),
             platforms: project_data.platforms.clone(),
+            image:project_data.image.clone(),
             template: ObjectId::with_string(&project_data.template).unwrap(),
             features: project_data
                 .features
@@ -38,6 +39,7 @@ async fn add_project(
             proposal: project_data.proposal.clone(),
             delivrable: project_data.delivrable.clone(),
             total_price: project_data.total_price,
+            payment_option: project_data.payment_option.clone(),
         })
         .await
     {
@@ -60,7 +62,7 @@ async fn add_project(
                                         Err(_mongodb_error) => bson::Document::new(),
                                     })
                                     .ok();
-                                println!("Prototype Dezrlized: {:?}", project);
+                           
                                 ProjectResponseModel::build_project(project.unwrap())
                             })
                             .collect()
@@ -79,6 +81,7 @@ async fn add_project(
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
 }
+
 
 #[post("project/get")]
 async fn get_project_by_id(
@@ -101,7 +104,7 @@ async fn get_project_by_id(
                         Err(_mongodb_error) => bson::Document::new(),
                     })
                     .ok();
-                    println!("Project Dezrlized: {:?}", project);
+              
                     ProjectResponseModel::build_project(project.unwrap())
                 })
                 .collect()
@@ -137,7 +140,7 @@ async fn get_all_project_by_client_id(
                         Err(_mongodb_error) => bson::Document::new(),
                     })
                     .ok();
-                    println!("Project Dezrlized: {:?}", project);
+                  
                     ProjectResponseModel::build_project(project.unwrap())
                 })
                 .collect()
@@ -150,7 +153,7 @@ async fn get_all_project_by_client_id(
 }
 
 #[delete("project/state")]
-async fn archive_project(
+async fn change_project_state(
     app_state: web::Data<crate::AppState>,
     project_data: Json<ProjectState>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
@@ -186,13 +189,13 @@ async fn archive_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                    println!("Project Dezrlized: {:?}", project);
+                                 
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
                                 .await;
                             if !projects.is_empty() {
-                                Ok(HttpResponse::Ok().json(projects))
+                                Ok(HttpResponse::Ok().json(projects.last()))
                             } else {
                                 Err(ContentBuilderCustomResponseError::NotFound)
                             }
@@ -223,7 +226,7 @@ async fn get_all_projects(
                         Err(_mongodb_error) => bson::Document::new(),
                     })
                     .ok();
-                    println!("Project Dezrlized: {:?}", project);
+                
                     ProjectResponseModel::build_project(project.unwrap())
                 })
                 .collect()
@@ -235,116 +238,102 @@ async fn get_all_projects(
     }
 }
 
-#[post("project/feature/add")]
-async fn add_project_feature(
-    app_state: web::Data<crate::AppState>,
-    data: Json<FeatureToAnyModel>,
-) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let features_id = data
-        .features_id
-        .clone()
-        .into_iter()
-        .map(|feature_id| ObjectId::with_string(&feature_id.clone()).unwrap())
-        .collect::<Vec<ObjectId>>();
+// #[post("project/feature/add")]
+// async fn add_project_feature(
+//     app_state: web::Data<crate::AppState>,
+//     data: Json<FeatureToAnyModel>,
+// ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+//     let features_id = data
+//         .features_id
+//         .clone()
+//         .into_iter()
+//         .map(|feature_id| ObjectId::with_string(&feature_id.clone()).unwrap())
+//         .collect::<Vec<ObjectId>>();
 
-    match app_state
-        .container
-        .project
-        .add_feature(&data.id, features_id)
-        .await
-        .and_then(|document| {
-            Ok(document.unwrap().get_object_id("_id").unwrap().to_string())
-            //    Ok(HttpResponse::Ok().body("ok"))
-        }) {
-        Ok(id) => match app_state.container.project.refactor_one_by_id(&id).await {
-            Ok(cursor) => {
-                let projects: Vec<ProjectResponseModel> = cursor
-                    .map(|doc| {
-                        let project = bson::from_document::<ProjectDeserializeModel>(match doc {
-                            Ok(project) => match project {
-                                project => project,
-                            },
-                            Err(_mongodb_error) => bson::Document::new(),
-                        })
-                        .ok();
-                        println!("Tempalte Dezrlized: {:?}", project);
-                        ProjectResponseModel::build_project(project.unwrap())
-                    })
-                    .collect()
-                    .await;
+//     match app_state
+//         .container
+//         .project
+//         .add_feature(&data.id, features_id)
+//         .await
+//         .and_then(|document| {
+//             Ok(document.unwrap().get_object_id("_id").unwrap().to_string())
+//             //    Ok(HttpResponse::Ok().body("ok"))
+//         }) {
+//         Ok(id) => match app_state.container.project.refactor_one_by_id(&id).await {
+//             Ok(cursor) => {
+//                 let projects: Vec<ProjectResponseModel> = cursor
+//                     .map(|doc| {
+//                         let project = bson::from_document::<ProjectDeserializeModel>(match doc {
+//                             Ok(project) => match project {
+//                                 project => project,
+//                             },
+//                             Err(_mongodb_error) => bson::Document::new(),
+//                         })
+//                         .ok();
+                   
+//                         ProjectResponseModel::build_project(project.unwrap())
+//                     })
+//                     .collect()
+//                     .await;
 
-                Ok(HttpResponse::Ok().json(projects.last()))
-            }
-            Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
-        },
-        Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-}
+//                 Ok(HttpResponse::Ok().json(projects.last()))
+//             }
+//             Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//         },
+//         Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//     }
+// }
 
-#[delete("project/feature/delete")]
-async fn delete_project_feature(
-    app_state: web::Data<crate::AppState>,
-    data: Json<FeatureToAnyModel>,
-) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    match app_state
-        .container
-        .project
-        .delete_feature(&data.id, &data.features_id[0])
-        .await
-        .and_then(|document| Ok(document.unwrap().get_object_id("_id").unwrap().to_string()))
-    {
-        Ok(id) => match app_state.container.project.refactor_one_by_id(&id).await {
-            Ok(cursor) => {
-                let projects: Vec<ProjectResponseModel> = cursor
-                    .map(|doc| {
-                        let project = bson::from_document::<ProjectDeserializeModel>(match doc {
-                            Ok(project) => match project {
-                                project => project,
-                            },
-                            Err(_mongodb_error) => bson::Document::new(),
-                        })
-                        .ok();
-                        println!("Tempalte Dezrlized: {:?}", project);
-                        ProjectResponseModel::build_project(project.unwrap())
-                    })
-                    .collect()
-                    .await;
+// #[delete("project/feature/delete")]
+// async fn delete_project_feature(
+//     app_state: web::Data<crate::AppState>,
+//     data: Json<FeatureToAnyModel>,
+// ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+//     match app_state
+//         .container
+//         .project
+//         .delete_feature(&data.id, &data.features_id[0])
+//         .await
+//         .and_then(|document| Ok(document.unwrap().get_object_id("_id").unwrap().to_string()))
+//     {
+//         Ok(id) => match app_state.container.project.refactor_one_by_id(&id).await {
+//             Ok(cursor) => {
+//                 let projects: Vec<ProjectResponseModel> = cursor
+//                     .map(|doc| {
+//                         let project = bson::from_document::<ProjectDeserializeModel>(match doc {
+//                             Ok(project) => match project {
+//                                 project => project,
+//                             },
+//                             Err(_mongodb_error) => bson::Document::new(),
+//                         })
+//                         .ok();
+                    
+//                         ProjectResponseModel::build_project(project.unwrap())
+//                     })
+//                     .collect()
+//                     .await;
 
-                Ok(HttpResponse::Ok().json(projects.last()))
-            }
-            Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
-        },
-        Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-}
+//                 Ok(HttpResponse::Ok().json(projects.last()))
+//             }
+//             Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//         },
+//         Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
+//     }
+// }
 
 #[put("project/update")]
 async fn update_project(
     app_state: web::Data<crate::AppState>,
-    project_data: Json<ProjectRequestModel>,
+    project_data: Json<ProjectUpdateModel>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    println!("{:?}", project_data);
+
     match app_state
         .container
         .project
         .update_one(
-            &project_data.client_id,
-            Project {
-                client_id: ObjectId::with_string(&project_data.client_id).unwrap(),
-                name: project_data.name.clone(),
-                platforms: project_data.platforms.clone(),
-                template: ObjectId::with_string(&project_data.template).unwrap(),
-                features: project_data
-                    .features
-                    .clone()
-                    .into_iter()
-                    .map(|feature_id| ObjectId::with_string(&feature_id).unwrap())
-                    .collect::<Vec<ObjectId>>(),
-                state: project_data.state.clone(),
-                proposal: project_data.proposal.clone(),
-                delivrable: project_data.delivrable.clone(),
-                total_price: project_data.total_price,
-            },
+            &project_data.id,
+            &project_data.name,
+            project_data.image.clone()
         )
         .await
     {
@@ -367,7 +356,7 @@ async fn update_project(
                                         Err(_mongodb_error) => bson::Document::new(),
                                     })
                                     .ok();
-                                println!("Prototype Dezrlized: {:?}", project);
+                          
                                 ProjectResponseModel::build_project(project.unwrap())
                             })
                             .collect()
@@ -432,7 +421,7 @@ async fn add_full_build_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                    println!("Project Dezrlized: {:?}", project);
+                                 
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
@@ -453,6 +442,7 @@ async fn add_full_build_project(
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
 }
+
 
 #[put("project/proposal/add")]
 async fn add_proposal_project(
@@ -491,13 +481,13 @@ async fn add_proposal_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                    println!("Project Dezrlized: {:?}", project);
+                                 
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
                                 .await;
                             if !projects.is_empty() {
-                                Ok(HttpResponse::Ok().json(projects))
+                                Ok(HttpResponse::Ok().json(projects.last()))
                             } else {
                                 Err(ContentBuilderCustomResponseError::NotFound)
                             }
@@ -567,7 +557,7 @@ async fn add_mvp_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                    println!("Project Dezrlized: {:?}", project);
+                                 
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
@@ -643,7 +633,7 @@ async fn add_design_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                    println!("Project Dezrlized: {:?}", project);
+                             
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()

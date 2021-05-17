@@ -13,12 +13,12 @@ pub use features_controller::{
     get_feature_by_id, update_feature,create_feature
 };
 pub use projects_controller::{
-    add_design_project, add_full_build_project, add_mvp_project, add_project, add_project_feature,
-    add_proposal_project, archive_project, delete_project_feature, generate_project_specification,
+    add_design_project, add_full_build_project, add_mvp_project, add_project, 
+    add_proposal_project, change_project_state,  generate_project_specification,
     get_all_project_by_client_id, get_all_projects, get_project_by_id, update_project,
 };
 pub use prototypes_controller::{
-    add_prototype, delete_prototype, get_prototype_by_template_id, update_prototype,
+    add_prototype, get_prototype_by_template_id, update_prototype,
 };
 pub use templates_controller::{
     create_template, add_template_specification, delete_template, get_all_templates,
