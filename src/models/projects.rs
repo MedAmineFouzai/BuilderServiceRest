@@ -105,7 +105,12 @@ impl ProjectsCollection {
             .await?)
     }
 
-    pub async fn update_one<T>(&self, user_id: &str,name:&str, image: T) -> Result<Option<Document>, Error>
+    pub async fn update_one<T>(
+        &self,
+        user_id: &str,
+        name: &str,
+        image: T,
+    ) -> Result<Option<Document>, Error>
     where
         T: serde::Serialize,
     {
@@ -124,7 +129,7 @@ impl ProjectsCollection {
                         .unwrap()
                         .clone()
                       }
-                     
+
 
                 },
                 Some(
@@ -375,7 +380,7 @@ impl ProjectsCollection {
                 doc! {
                       "$set":{
 
-                          "delivrable.design_and_prototype":bson::to_bson(&design)
+                          "delivrable.design":bson::to_bson(&design)
                           .unwrap()
                           .as_document()
                           .unwrap()
@@ -443,4 +448,5 @@ impl ProjectsCollection {
             )
             .await?)
     }
+    
 }

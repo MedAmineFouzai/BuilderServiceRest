@@ -1,8 +1,9 @@
 extern crate jsonwebtoken as jwt;
 use super::schema::{
     CategoiresIds, FeatureToAnyModel, File, Introduction, NonFunctionalRequirements,
-    OverallDescription, SerlizedId, Specification, Template, TemplateDeserializeModel,TemplateObjectWithId,
-    TemplateReafactorDeserializeModel, TemplateResponseModel, TemplateResponseRefactorModel,TemplateObject
+    OverallDescription, SerlizedId, Specification, Template, TemplateDeserializeModel,
+    TemplateObject, TemplateObjectWithId, TemplateReafactorDeserializeModel, TemplateResponseModel,
+    TemplateResponseRefactorModel,
 };
 use crate::middleware::error::ContentBuilderCustomResponseError;
 use actix_web::{
@@ -15,7 +16,7 @@ use bson::oid::ObjectId;
 use futures::stream::StreamExt;
 use std::path::PathBuf;
 
-#[get("template/all")]// no need 
+#[get("template/all")] // no need
 async fn get_all_templates(
     app_state: web::Data<crate::AppState>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
@@ -156,155 +157,165 @@ async fn get_templates_by_categories_id(
 //     // Ok(HttpResponse::Ok().body("ok"))
 // }
 
-#[post("template/create")]// no need
+#[post("template/create")] // no need
 async fn create_template(
     app_state: web::Data<crate::AppState>,
-    template:Json<TemplateObject>
+    template: Json<TemplateObject>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-
     match serde_json::to_string(&template.into_inner()).and_then(|template| {
         match serde_json::from_str::<TemplateObject>(&template) {
             Ok(template) => Ok(template),
             Err(serde_error) => Err(serde_error.into()),
         }
     }) {
-    Ok(template)=>{
-        match app_state
-        .container
-        .template
-        .insert_one(Template{
-            name: template.name,
-            description: template.description,
-            category: ObjectId::with_string(&template.category).unwrap(),
-            features: Some(match template.features{
-                Some(features)=>features.into_iter().map(|object_id|{
-                    ObjectId::with_string(&object_id).unwrap()
-                }).collect::<Vec<ObjectId>>(),
-                None=>vec![]
-            }),
-            image: template.image,
-            specification:Some( match template.specification{
-                Some(specification)=>specification,
-                None=>Specification::new()
-            }),
-            
-        })
-        .await
-    {
-        Ok(id) => match id.inserted_id.as_object_id() {
-            Some(id) => {
-                match app_state
-                    .container
-                    .template
-                    .refactor_template(&id.to_string())
-                    .await
-                {
-                    Ok(cursor) => {
-                        let templates: Vec<TemplateResponseRefactorModel> = cursor
-                        .map(|doc| {
-                            let template =
-                                bson::from_document::<TemplateReafactorDeserializeModel>(match doc {
-                                    Ok(template) => match template {
-                                        template => template,
-                                    },
-                                    Err(_mongodb_error) => bson::Document::new(),
-                                })
-                                .ok();
-                            println!("Tempalte Dezrlized: {:?}", template);
-                            TemplateResponseRefactorModel::build_template(template.unwrap())
-                        })
-                        .collect()
-                        .await;
-                    Ok(HttpResponse::Ok().json(templates.last()))
+        Ok(template) => {
+            match app_state
+                .container
+                .template
+                .insert_one(Template {
+                    name: template.name,
+                    description: template.description,
+                    category: ObjectId::with_string(&template.category).unwrap(),
+                    features: Some(match template.features {
+                        Some(features) => features
+                            .into_iter()
+                            .map(|object_id| ObjectId::with_string(&object_id).unwrap())
+                            .collect::<Vec<ObjectId>>(),
+                        None => vec![],
+                    }),
+                    image: template.image,
+                    specification: Some(match template.specification {
+                        Some(specification) => specification,
+                        None => Specification::new(),
+                    }),
+                })
+                .await
+            {
+                Ok(id) => match id.inserted_id.as_object_id() {
+                    Some(id) => {
+                        match app_state
+                            .container
+                            .template
+                            .refactor_template(&id.to_string())
+                            .await
+                        {
+                            Ok(cursor) => {
+                                let templates: Vec<TemplateResponseRefactorModel> = cursor
+                                    .map(|doc| {
+                                        let template = bson::from_document::<
+                                            TemplateReafactorDeserializeModel,
+                                        >(
+                                            match doc {
+                                                Ok(template) => match template {
+                                                    template => template,
+                                                },
+                                                Err(_mongodb_error) => bson::Document::new(),
+                                            },
+                                        )
+                                        .ok();
+                                        println!("Tempalte Dezrlized: {:?}", template);
+                                        TemplateResponseRefactorModel::build_template(
+                                            template.unwrap(),
+                                        )
+                                    })
+                                    .collect()
+                                    .await;
+                                Ok(HttpResponse::Ok().json(templates.last()))
+                            }
+                            Err(_mongodb_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
+                            }
+                        }
                     }
-                    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-                }
+                    None => Err(ContentBuilderCustomResponseError::InternalError),
+                },
+                Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
             }
-            None => Err(ContentBuilderCustomResponseError::InternalError),
-        },
+        }
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
-    },
-    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
 
-    }
-
-   
     // Ok(HttpResponse::Ok().body("ok"))
 }
 
-
-#[put("template/update")]//no need
+#[put("template/update")] //no need
 async fn update_template(
     app_state: web::Data<crate::AppState>,
-   template:Json<TemplateObjectWithId>
+    template: Json<TemplateObjectWithId>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-
     match serde_json::to_string(&template.into_inner()).and_then(|template| {
         match serde_json::from_str::<TemplateObjectWithId>(&template) {
             Ok(template) => Ok(template),
             Err(serde_error) => Err(serde_error.into()),
         }
     }) {
-    Ok(template)=>{
-        match app_state
-        .container
-        .template
-        .update_one(&template.id,Template{
-            name: template.name,
-            description: template.description,
-            category: ObjectId::with_string(&template.category).unwrap(),
-            features: Some(match template.features{
-                Some(features)=>features.into_iter().map(|object_id|{
-                    ObjectId::with_string(&object_id).unwrap()
-                }).collect::<Vec<ObjectId>>(),
-                None=>vec![]
-            }),
-            image: template.image,
-            specification:Some( match template.specification{
-                Some(specification)=>specification,
-                None=>Specification::new()
-            }),
-            
-        })
-        .await
-    {
-        Ok(document) => match document{
-            Some(document) => {
-                match app_state
-                    .container
-                    .template
-                    .refactor_template(&document.get_object_id("_id").unwrap().to_string())
-                    .await
-                {
-                    Ok(cursor) => {
-                        let templates: Vec<TemplateResponseRefactorModel> = cursor
-                        .map(|doc| {
-                            let template =
-                                bson::from_document::<TemplateReafactorDeserializeModel>(match doc {
-                                    Ok(template) => match template {
-                                        template => template,
-                                    },
-                                    Err(_mongodb_error) => bson::Document::new(),
-                                })
-                                .ok();
-                            println!("Tempalte Dezrlized: {:?}", template);
-                            TemplateResponseRefactorModel::build_template(template.unwrap())
-                        })
-                        .collect()
-                        .await;
-                    Ok(HttpResponse::Ok().json(templates.last()))
+        Ok(template) => {
+            match app_state
+                .container
+                .template
+                .update_one(
+                    &template.id,
+                    Template {
+                        name: template.name,
+                        description: template.description,
+                        category: ObjectId::with_string(&template.category).unwrap(),
+                        features: Some(match template.features {
+                            Some(features) => features
+                                .into_iter()
+                                .map(|object_id| ObjectId::with_string(&object_id).unwrap())
+                                .collect::<Vec<ObjectId>>(),
+                            None => vec![],
+                        }),
+                        image: template.image,
+                        specification: Some(match template.specification {
+                            Some(specification) => specification,
+                            None => Specification::new(),
+                        }),
+                    },
+                )
+                .await
+            {
+                Ok(document) => match document {
+                    Some(document) => {
+                        match app_state
+                            .container
+                            .template
+                            .refactor_template(&document.get_object_id("_id").unwrap().to_string())
+                            .await
+                        {
+                            Ok(cursor) => {
+                                let templates: Vec<TemplateResponseRefactorModel> = cursor
+                                    .map(|doc| {
+                                        let template = bson::from_document::<
+                                            TemplateReafactorDeserializeModel,
+                                        >(
+                                            match doc {
+                                                Ok(template) => match template {
+                                                    template => template,
+                                                },
+                                                Err(_mongodb_error) => bson::Document::new(),
+                                            },
+                                        )
+                                        .ok();
+                                        TemplateResponseRefactorModel::build_template(
+                                            template.unwrap(),
+                                        )
+                                    })
+                                    .collect()
+                                    .await;
+                                Ok(HttpResponse::Ok().json(templates.last()))
+                            }
+                            Err(_mongodb_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
+                            }
+                        }
                     }
-                    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-                }
+                    None => Err(ContentBuilderCustomResponseError::NotFound),
+                },
+                Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
             }
-             None=> Err(ContentBuilderCustomResponseError::NotFound),
-        },
+        }
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-    },
-    Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-
     }
     // Ok(HttpResponse::Ok().body("ok"))
 }
@@ -332,7 +343,9 @@ async fn delete_template(
                     match bson::from_document::<TemplateDeserializeModel>(result) {
                         Ok(template) => Ok(HttpResponse::Ok()
                             .json(TemplateResponseModel::build_template(template))),
-                        Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                        Err(_bson_de_error) => {
+                            Err(ContentBuilderCustomResponseError::InternalError)
+                        }
                     }
                 } else {
                     Err(ContentBuilderCustomResponseError::NotFound)
@@ -343,7 +356,7 @@ async fn delete_template(
     }
 }
 
-#[put("template/feature/update")]// no need
+#[put("template/feature/update")] // no need
 async fn update_template_feature(
     app_state: web::Data<crate::AppState>,
     data: Json<FeatureToAnyModel>,
@@ -391,7 +404,7 @@ async fn update_template_feature(
     // Ok(HttpResponse::Ok().body("ok"))
 }
 
-#[post("template/get")]//no need
+#[post("template/get")] //no need
 async fn get_template_by_id(
     app_state: web::Data<crate::AppState>,
     template_data: Json<SerlizedId>,
@@ -419,14 +432,10 @@ async fn get_template_by_id(
 
                     let template =
                         bson::from_document::<TemplateReafactorDeserializeModel>(match doc {
-                            doc=>doc
-                            // Ok(template) => match template {
-                            //     template => template,
-                            // },
-                            // Err(_mongodb_error) => bson::Document::new(),
+                            doc => doc,
                         })
                         .ok();
-                    println!("Tempalte Dezrlized: {:?}", template);
+
                     TemplateResponseRefactorModel::build_template(template.unwrap())
                 })
                 .collect()
@@ -434,15 +443,14 @@ async fn get_template_by_id(
             if !templates.last().is_none() {
                 Ok(HttpResponse::Ok().json(templates.last()))
             } else {
-                println!("Tempalte Dezrlized: {:?}", templates);
                 Err(ContentBuilderCustomResponseError::NotFound)
             }
         }
-        Err(e) => Err(ContentBuilderCustomResponseError::InternalError),
+        Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
 }
 
-#[put("template/specification/add")]// no need
+#[put("template/specification/add")] // no need
 async fn add_template_specification(
     app_state: web::Data<crate::AppState>,
     mut parts: Parts,
@@ -505,8 +513,8 @@ async fn add_template_specification(
                     .await;
                 Ok(HttpResponse::Ok().json(templates.last()))
             }
-            Err(e) => Err(ContentBuilderCustomResponseError::InternalError),
+            Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
         },
-        Err(some_error) => Err(ContentBuilderCustomResponseError::InternalError),
+        Err(_some_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
 }

@@ -3,7 +3,7 @@ mod middleware;
 mod models;
 use actix_files as fs;
 use actix_web::{
-    web::{scope, ServiceConfig,JsonConfig},
+    web::{scope, JsonConfig, ServiceConfig},
     App, HttpServer,
 };
 use load_dotenv::load_dotenv;
@@ -86,8 +86,6 @@ pub fn init_services(cfg: &mut ServiceConfig) {
         .service(controllers::get_all_project_by_client_id)
         .service(controllers::change_project_state)
         .service(controllers::get_all_projects)
-        // .service(controllers::add_project_feature)
-        // .service(controllers::delete_project_feature)
         .service(controllers::update_project)
         .service(controllers::generate_project_specification)
         .service(controllers::add_full_build_project)
@@ -114,10 +112,9 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 container: collection_container,
             })
-            .app_data(JsonConfig::default().limit(4096*512))
+            .app_data(JsonConfig::default().limit(4096 * 512))
             //2MO
             // limit(1024 * 1024 * 50))//50MO
-            .service(fs::Files::new("/media", "/static/uploads/.").show_files_listing())
             .service(scope("/api/v1/builder/").configure(init_services))
     })
     .bind(("0.0.0.0".to_string(), port))?

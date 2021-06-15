@@ -12,6 +12,7 @@ pub struct FeaturesCollection {
 }
 
 impl FeaturesCollection {
+    
     pub fn new(collection: Collection) -> FeaturesCollection {
         FeaturesCollection { collection }
     }
@@ -130,10 +131,8 @@ impl FeaturesCollection {
     pub async fn add_wireframe(
         &self,
         feautre_id: &str,
-        wireframes:Vec<Document>,
-    ) -> Result<Option<Document>, Error>
-
-    {
+        wireframes: Vec<Document>,
+    ) -> Result<Option<Document>, Error> {
         Ok(self
             .collection
             .find_one_and_update(

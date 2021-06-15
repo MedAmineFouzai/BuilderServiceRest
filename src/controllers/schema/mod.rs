@@ -9,6 +9,20 @@ pub struct File {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectFile {
+    pub id:String,
+    pub name: String,
+    pub src: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectFullBuild {
+    pub id:String,
+    pub url: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileWithId {
     pub _id: ObjectId,
     pub name: String,
@@ -152,8 +166,6 @@ pub struct Template {
     // pub prototype_id: Option<ObjectId>,
 }
 
-
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TemplateObject {
     pub name: String,
@@ -166,7 +178,7 @@ pub struct TemplateObject {
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TemplateObjectWithId {
-    pub id :String,
+    pub id: String,
     pub name: String,
     pub description: String,
     pub category: String,
@@ -175,7 +187,6 @@ pub struct TemplateObjectWithId {
     pub specification: Option<Specification>,
     // pub prototype_id: Option<ObjectId>,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateReafactorDeserializeModel {
@@ -375,7 +386,6 @@ pub struct ProtoTypeObject {
     pub connections: Vec<Connections>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProtoTypeRefactorObject {
     pub feature: FeatureDeserializeModel,
@@ -457,32 +467,29 @@ impl ProtoTypeResponseModel {
 pub struct Project {
     pub client_id: ObjectId,
     pub name: String,
-    pub image:File,
+    pub image: File,
     pub platforms: Vec<String>,
     pub template: ObjectId,
     pub features: Vec<ObjectId>,
     pub state: String,
     pub proposal: Option<Proposal>,
-    pub payment_option:PaymentOption,
+    pub payment_option: PaymentOption,
     pub delivrable: Option<Delivrable>,
     pub total_price: f64,
 }
-
-
-
 
 #[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct ProjectDeserializeModel {
     pub _id: ObjectId,
     pub client_id: ObjectId,
     pub name: String,
-    pub image:File,
+    pub image: File,
     pub platforms: Vec<String>,
     pub template: TemplateReafactorDeserializeModel,
     pub features: Vec<FeatureDeserializeModel>,
     pub state: String,
     pub proposal: Option<Proposal>,
-    pub payment_option:PaymentOption,
+    pub payment_option: PaymentOption,
     pub delivrable: Option<Delivrable>,
     pub total_price: f64,
 }
@@ -491,13 +498,13 @@ pub struct ProjectDeserializeModel {
 pub struct ProjectRequestModel {
     pub client_id: String,
     pub name: String,
-    pub image:File,
+    pub image: File,
     pub platforms: Vec<String>,
     pub template: String,
     pub features: Vec<String>,
     pub state: String,
     pub proposal: Option<Proposal>,
-    pub payment_option:PaymentOption,
+    pub payment_option: PaymentOption,
     pub delivrable: Option<Delivrable>,
     pub total_price: f64,
 }
@@ -505,8 +512,7 @@ pub struct ProjectRequestModel {
 pub struct ProjectUpdateModel {
     pub id: String,
     pub name: String,
-    pub image:File,
-  
+    pub image: File,
 }
 
 #[derive(Debug, Serialize, Clone, Deserialize)]
@@ -515,11 +521,7 @@ pub struct ProjectState {
     pub state: String,
 }
 
-#[derive(Debug, Serialize, Clone, Deserialize)]
-pub struct ProjectFullBuild {
-    pub id: String,
-    pub full_build: String,
-}
+
 
 #[derive(Debug, Serialize, Clone, Deserialize)]
 pub struct ProjectProposal {
@@ -532,13 +534,13 @@ pub struct ProjectResponseModel {
     pub id: String,
     pub client_id: String,
     pub name: String,
-    pub image:File,
+    pub image: File,
     pub platforms: Vec<String>,
     pub template: TemplateResponseRefactorModel,
     pub features: Vec<FeatureResponseModel>,
     pub state: String,
     pub proposal: Option<Proposal>,
-    pub payment_option:PaymentOption,
+    pub payment_option: PaymentOption,
     pub delivrable: Option<Delivrable>,
     pub total_price: f64,
 }
@@ -549,7 +551,7 @@ impl ProjectResponseModel {
             id: project._id.to_string(),
             client_id: project.client_id.to_string(),
             name: project.name,
-            image:project.image,
+            image: project.image,
             platforms: project.platforms,
             template: TemplateResponseRefactorModel::build_template(project.template),
             features: project
@@ -574,8 +576,8 @@ pub struct Proposal {
     pub resources: Vec<Resource>,
 }
 
-#[derive(Debug,Serialize, Clone, Deserialize)]
-pub struct PaymentOption{
+#[derive(Debug, Serialize, Clone, Deserialize)]
+pub struct PaymentOption {
     pub opt_one: i32,
     pub opt_two: i32,
     pub opt_three: i32,
@@ -600,4 +602,12 @@ pub struct Delivrable {
     pub full_build: String,
     pub mvp: File,
     pub design: File,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionResult {
+    pub trans_id: String,
+    pub amount: u64,
+    pub created: i64,
+    pub status: String,
 }

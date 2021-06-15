@@ -1,6 +1,7 @@
 extern crate jsonwebtoken as jwt;
 use super::schema::{
-    Feature, FeatureDeserializeModel, FeatureResponseModel, File, FileWithId, SerlizedId,FeatureObject,UpdateFeatureWireframesModel
+    Feature, FeatureDeserializeModel, FeatureObject, FeatureResponseModel, File, FileWithId,
+    SerlizedId, UpdateFeatureWireframesModel,
 };
 use crate::middleware::error::ContentBuilderCustomResponseError;
 use actix_web::{
@@ -66,7 +67,7 @@ async fn get_all_features(
 //         .take("wireframes")
 //         .into_iter()
 //         .map(|file| {
-            
+
 //             file.persist_in(PathBuf::from("./static/uploads/wireframes"))
 //                 .ok()
 //         })
@@ -248,7 +249,9 @@ async fn get_feature_by_id(
                         match bson::from_document::<FeatureDeserializeModel>(feature_document) {
                             Ok(feature) => Ok(HttpResponse::Ok()
                                 .json(FeatureResponseModel::build_feature(feature))),
-                            Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                            Err(_bson_de_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
+                            }
                         }
                     } else {
                         Err(ContentBuilderCustomResponseError::NotFound)
@@ -284,7 +287,9 @@ async fn delete_feature(
                         match bson::from_document::<FeatureDeserializeModel>(feature_dcoument) {
                             Ok(feature) => Ok(HttpResponse::Ok()
                                 .json(FeatureResponseModel::build_feature(feature))),
-                            Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                            Err(_bson_de_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
+                            }
                         }
                     } else {
                         Err(ContentBuilderCustomResponseError::NotFound)
@@ -299,7 +304,7 @@ async fn delete_feature(
 #[post("feature/wireframe/add")]
 async fn add_feature_wireframe(
     app_state: web::Data<crate::AppState>,
-    wireframes: Json<UpdateFeatureWireframesModel>
+    wireframes: Json<UpdateFeatureWireframesModel>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
     match serde_json::to_string(&wireframes.into_inner()).and_then(|wireframes| {
         match serde_json::from_str::<UpdateFeatureWireframesModel>(&wireframes) {
@@ -307,44 +312,47 @@ async fn add_feature_wireframe(
             Err(serde_error) => Err(serde_error.into()),
         }
     }) {
-        Ok(feature_wireframes)=>{
-         
-
+        Ok(feature_wireframes) => {
             match app_state
-            .container
-            .feature
-            .add_wireframe(&feature_wireframes.id, feature_wireframes.wireframes.into_iter().map(
-                |wireframe|{
-                    let document:Document=bson::to_bson(& FileWithId{
-                        _id: ObjectId::with_string(&wireframe.id).unwrap(),
-                       name:wireframe.name,
-                       src:wireframe.src
-                       })
-                        .unwrap()
-                        .as_document()
-                        .unwrap()
-                        .clone();
-                        document
+                .container
+                .feature
+                .add_wireframe(
+                    &feature_wireframes.id,
+                    feature_wireframes
+                        .wireframes
+                        .into_iter()
+                        .map(|wireframe| {
+                            let document: Document = bson::to_bson(&FileWithId {
+                                _id: ObjectId::with_string(&wireframe.id).unwrap(),
+                                name: wireframe.name,
+                                src: wireframe.src,
+                            })
+                            .unwrap()
+                            .as_document()
+                            .unwrap()
+                            .clone();
+                            document
+                        })
+                        .collect::<Vec<Document>>(),
+                )
+                .await
+            {
+                Ok(document) => {
+                    match document {
+                        Some(doc) => match bson::from_document::<FeatureDeserializeModel>(doc) {
+                            Ok(feature) => Ok(HttpResponse::Ok()
+                                .json(FeatureResponseModel::build_feature(feature))),
+                            Err(_bson_de_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
+                            }
+                        },
+                        None => Err(ContentBuilderCustomResponseError::NotFound),
+                    }
                 }
-            ).collect::<Vec<Document>>())
-            .await
-        {
-            Ok(document) => match document {
-                Some(doc) => {
-                    match bson::from_document::<FeatureDeserializeModel>(doc) {
-                        Ok(feature) => Ok(HttpResponse::Ok().json(FeatureResponseModel::build_feature(feature))),
-                        Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError)}
-                },
-                None =>Err(ContentBuilderCustomResponseError::NotFound),
-            },
-            Err(_mongodb_error) => {
-                Err(ContentBuilderCustomResponseError::InternalError)
+                Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
             }
         }
-        },
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-
-
     }
     // let feature_id = parts.texts.as_hash_map()["id"];
     // let images = parts
@@ -429,9 +437,6 @@ async fn add_feature_wireframe(
     //     },
     //     Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     // }
-
-
-
 }
 
 #[delete("feature/wireframe/delete")]
@@ -439,8 +444,6 @@ async fn delete_feature_wireframe(
     app_state: web::Data<crate::AppState>,
     wireframe_data: Json<SerlizedId>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-
-    
     match app_state
         .container
         .feature
@@ -502,7 +505,9 @@ async fn delete_feature_wireframe(
                                 }
                             }
                         }
-                        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                        Err(_mongodb_error) => {
+                            Err(ContentBuilderCustomResponseError::InternalError)
+                        }
                     }
                 } else {
                     Err(ContentBuilderCustomResponseError::NotFound)
@@ -513,90 +518,86 @@ async fn delete_feature_wireframe(
     }
 }
 
-
 #[post("feature/create")]
 async fn create_feature(
     app_state: web::Data<crate::AppState>,
-    feature:Json<FeatureObject>
+    feature: Json<FeatureObject>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-   
     match serde_json::to_string(&feature.into_inner()).and_then(|feature_data| {
         match serde_json::from_str::<FeatureObject>(&feature_data) {
             Ok(feature) => Ok(feature),
             Err(serde_error) => Err(serde_error.into()),
         }
     }) {
-        Ok(feature)=>{
-          
-            
+        Ok(feature) => {
             match app_state
-            .container
-            .feature
-            .insert_one(Feature{
-                name: feature.name,
-                description: feature.description,
-                feature_type:feature.feature_type,
-                image: feature.image,
-                wireframes: Some(
-                    match feature.wireframes{
-                    Some(wireframes)=>wireframes.into_iter().map(|wireframe|{
-                        FileWithId{
-                            _id:ObjectId::with_string(&wireframe.id).unwrap(),
-                            name:wireframe.name,
-                            src:wireframe.src
-                        }}).collect::<Vec<FileWithId>>(),
-                    None=>vec![]
-                }),
-                price: feature.price,
-                repo: feature.repo,
-                
-            })
-            .await
-        {
-            Ok(feature_id) => match feature_id.inserted_id.as_object_id() {
-                Some(object_id) => {
-                    match app_state
-                        .container
-                        .feature
-                        .find_one_by_id(&object_id.to_string())
-                        .await
-                        .and_then(|document| {
-                            Ok(match document {
-                                Some(document) => document,
-                                None => Document::new(),
+                .container
+                .feature
+                .insert_one(Feature {
+                    name: feature.name,
+                    description: feature.description,
+                    feature_type: feature.feature_type,
+                    image: feature.image,
+                    wireframes: Some(match feature.wireframes {
+                        Some(wireframes) => wireframes
+                            .into_iter()
+                            .map(|wireframe| FileWithId {
+                                _id: ObjectId::with_string(&wireframe.id).unwrap(),
+                                name: wireframe.name,
+                                src: wireframe.src,
                             })
-                        }) {
-                        Ok(feature_document) => match feature_document {
-                            document => {
-                                match bson::from_document::<FeatureDeserializeModel>(document) {
-                                    Ok(category) => Ok(HttpResponse::Ok()
-                                        .json(FeatureResponseModel::build_feature(category))),
-                                    Err(_bson_de_error) => {
-                                        Err(ContentBuilderCustomResponseError::InternalError)
+                            .collect::<Vec<FileWithId>>(),
+                        None => vec![],
+                    }),
+                    price: feature.price,
+                    repo: feature.repo,
+                })
+                .await
+            {
+                Ok(feature_id) => match feature_id.inserted_id.as_object_id() {
+                    Some(object_id) => {
+                        match app_state
+                            .container
+                            .feature
+                            .find_one_by_id(&object_id.to_string())
+                            .await
+                            .and_then(|document| {
+                                Ok(match document {
+                                    Some(document) => document,
+                                    None => Document::new(),
+                                })
+                            }) {
+                            Ok(feature_document) => match feature_document {
+                                document => {
+                                    match bson::from_document::<FeatureDeserializeModel>(document) {
+                                        Ok(category) => Ok(HttpResponse::Ok()
+                                            .json(FeatureResponseModel::build_feature(category))),
+                                        Err(_bson_de_error) => {
+                                            Err(ContentBuilderCustomResponseError::InternalError)
+                                        }
                                     }
                                 }
+                            },
+
+                            Err(_mongodb_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
                             }
-                        },
-    
-                        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                        }
                     }
-                }
-                None => Err(ContentBuilderCustomResponseError::InternalError),
-            },
-            Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                    None => Err(ContentBuilderCustomResponseError::InternalError),
+                },
+                Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+            }
         }
-        }
-            ,Err(e)=>Err(ContentBuilderCustomResponseError::InternalError),
-        }
+        Err(e) => Err(ContentBuilderCustomResponseError::InternalError),
+    }
     // Ok(HttpResponse::Ok().body("ok"))
-
 }
-
 
 #[put("feature/update")]
 async fn update_feature(
     app_state: web::Data<crate::AppState>,
-    feature:Json<FeatureResponseModel>
+    feature: Json<FeatureResponseModel>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
     match serde_json::to_string(&feature.into_inner()).and_then(|feature_data| {
         match serde_json::from_str::<FeatureResponseModel>(&feature_data) {
@@ -604,46 +605,50 @@ async fn update_feature(
             Err(serde_error) => Err(serde_error.into()),
         }
     }) {
-        Ok(feature)=>{
+        Ok(feature) => {
             match app_state
-            .container
-            .feature
-            .update_one(&feature.id,Feature{
-                name: feature.name,
-                description: feature.description,
-                feature_type:feature.feature_type,
-                image: feature.image,
-                wireframes: Some(
-                    match feature.wireframes{
-                    Some(wireframes)=>wireframes.into_iter().map(|wireframe|{
-                        FileWithId{
-                            _id:ObjectId::with_string(&wireframe.id).unwrap(),
-                            name:wireframe.name,
-                            src:wireframe.src
-                        }}).collect::<Vec<FileWithId>>(),
-                    None=>vec![]
-                }),
-                price: feature.price,
-                repo: feature.repo,
-            })
-            .await
-        {
-            Ok(result) => {
-                if result != None {
-                    match bson::from_document::<FeatureDeserializeModel>(result.unwrap()) {
-                        Ok(feature) => {
-                            Ok(HttpResponse::Ok().json(FeatureResponseModel::build_feature(feature)))
+                .container
+                .feature
+                .update_one(
+                    &feature.id,
+                    Feature {
+                        name: feature.name,
+                        description: feature.description,
+                        feature_type: feature.feature_type,
+                        image: feature.image,
+                        wireframes: Some(match feature.wireframes {
+                            Some(wireframes) => wireframes
+                                .into_iter()
+                                .map(|wireframe| FileWithId {
+                                    _id: ObjectId::with_string(&wireframe.id).unwrap(),
+                                    name: wireframe.name,
+                                    src: wireframe.src,
+                                })
+                                .collect::<Vec<FileWithId>>(),
+                            None => vec![],
+                        }),
+                        price: feature.price,
+                        repo: feature.repo,
+                    },
+                )
+                .await
+            {
+                Ok(result) => {
+                    if result != None {
+                        match bson::from_document::<FeatureDeserializeModel>(result.unwrap()) {
+                            Ok(feature) => Ok(HttpResponse::Ok()
+                                .json(FeatureResponseModel::build_feature(feature))),
+                            Err(_bson_de_error) => {
+                                Err(ContentBuilderCustomResponseError::InternalError)
+                            }
                         }
-                        Err(_bson_de_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                    } else {
+                        Err(ContentBuilderCustomResponseError::NotFound)
                     }
-                } else {
-                    Err(ContentBuilderCustomResponseError::NotFound)
                 }
+                Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
             }
-            Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
         }
-        },
-        Err(e)=>Err(ContentBuilderCustomResponseError::InternalError),
-        }
+        Err(e) => Err(ContentBuilderCustomResponseError::InternalError),
+    }
 }
-

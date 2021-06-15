@@ -1,7 +1,8 @@
 extern crate jsonwebtoken as jwt;
 use super::schema::{
     FeatureToAnyModel, File, Project, ProjectDeserializeModel, ProjectFullBuild, ProjectProposal,
-    ProjectRequestModel, ProjectResponseModel, ProjectState, SerlizedId,ProjectUpdateModel
+    ProjectRequestModel, ProjectResponseModel, ProjectState, ProjectUpdateModel, SerlizedId,
+    TransactionResult,ProjectFile,
 };
 use crate::middleware::error::ContentBuilderCustomResponseError;
 use actix_web::{
@@ -19,7 +20,6 @@ async fn add_project(
     app_state: web::Data<crate::AppState>,
     project_data: Json<ProjectRequestModel>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-
     match app_state
         .container
         .project
@@ -27,7 +27,7 @@ async fn add_project(
             client_id: ObjectId::with_string(&project_data.client_id).unwrap(),
             name: project_data.name.clone(),
             platforms: project_data.platforms.clone(),
-            image:project_data.image.clone(),
+            image: project_data.image.clone(),
             template: ObjectId::with_string(&project_data.template).unwrap(),
             features: project_data
                 .features
@@ -62,7 +62,7 @@ async fn add_project(
                                         Err(_mongodb_error) => bson::Document::new(),
                                     })
                                     .ok();
-                           
+
                                 ProjectResponseModel::build_project(project.unwrap())
                             })
                             .collect()
@@ -81,7 +81,6 @@ async fn add_project(
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
 }
-
 
 #[post("project/get")]
 async fn get_project_by_id(
@@ -104,7 +103,7 @@ async fn get_project_by_id(
                         Err(_mongodb_error) => bson::Document::new(),
                     })
                     .ok();
-              
+
                     ProjectResponseModel::build_project(project.unwrap())
                 })
                 .collect()
@@ -140,7 +139,7 @@ async fn get_all_project_by_client_id(
                         Err(_mongodb_error) => bson::Document::new(),
                     })
                     .ok();
-                  
+
                     ProjectResponseModel::build_project(project.unwrap())
                 })
                 .collect()
@@ -189,7 +188,7 @@ async fn change_project_state(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                 
+
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
@@ -200,7 +199,9 @@ async fn change_project_state(
                                 Err(ContentBuilderCustomResponseError::NotFound)
                             }
                         }
-                        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                        Err(_mongodb_error) => {
+                            Err(ContentBuilderCustomResponseError::InternalError)
+                        }
                     }
                 } else {
                     Err(ContentBuilderCustomResponseError::NotFound)
@@ -226,7 +227,7 @@ async fn get_all_projects(
                         Err(_mongodb_error) => bson::Document::new(),
                     })
                     .ok();
-                
+
                     ProjectResponseModel::build_project(project.unwrap())
                 })
                 .collect()
@@ -270,7 +271,7 @@ async fn get_all_projects(
 //                             Err(_mongodb_error) => bson::Document::new(),
 //                         })
 //                         .ok();
-                   
+
 //                         ProjectResponseModel::build_project(project.unwrap())
 //                     })
 //                     .collect()
@@ -307,7 +308,7 @@ async fn get_all_projects(
 //                             Err(_mongodb_error) => bson::Document::new(),
 //                         })
 //                         .ok();
-                    
+
 //                         ProjectResponseModel::build_project(project.unwrap())
 //                     })
 //                     .collect()
@@ -326,14 +327,13 @@ async fn update_project(
     app_state: web::Data<crate::AppState>,
     project_data: Json<ProjectUpdateModel>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-
     match app_state
         .container
         .project
         .update_one(
             &project_data.id,
             &project_data.name,
-            project_data.image.clone()
+            project_data.image.clone(),
         )
         .await
     {
@@ -356,7 +356,7 @@ async fn update_project(
                                         Err(_mongodb_error) => bson::Document::new(),
                                     })
                                     .ok();
-                          
+
                                 ProjectResponseModel::build_project(project.unwrap())
                             })
                             .collect()
@@ -392,7 +392,7 @@ async fn add_full_build_project(
     match app_state
         .container
         .project
-        .update_full_build(&project_data.id, &project_data.full_build)
+        .update_full_build(&project_data.id, &project_data.url)
         .await
         .and_then(|document| {
             let project = match document {
@@ -421,18 +421,20 @@ async fn add_full_build_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                 
+
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
                                 .await;
                             if !projects.is_empty() {
-                                Ok(HttpResponse::Ok().json(projects))
+                                Ok(HttpResponse::Ok().json(projects.last()))
                             } else {
                                 Err(ContentBuilderCustomResponseError::NotFound)
                             }
                         }
-                        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+                        Err(_mongodb_error) => {
+                            Err(ContentBuilderCustomResponseError::InternalError)
+                        }
                     }
                 } else {
                     Err(ContentBuilderCustomResponseError::NotFound)
@@ -442,7 +444,6 @@ async fn add_full_build_project(
         Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
     }
 }
-
 
 #[put("project/proposal/add")]
 async fn add_proposal_project(
@@ -481,7 +482,68 @@ async fn add_proposal_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                                 
+
+                                    ProjectResponseModel::build_project(project.unwrap())
+                                })
+                                .collect()
+                                .await;
+                            if !projects.is_empty() {
+                                Ok(HttpResponse::Ok().json(projects.last()))
+                            } else {
+                                Err(ContentBuilderCustomResponseError::NotFound)
+                            }
+                        }
+                        Err(_mongodb_error) => {
+                            Err(ContentBuilderCustomResponseError::InternalError)
+                        }
+                    }
+                } else {
+                    Err(ContentBuilderCustomResponseError::NotFound)
+                }
+            }
+        },
+        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
+    }
+}
+
+#[put("project/mvp/add")]
+async fn add_mvp_project(
+    app_state: web::Data<crate::AppState>,
+    mvp: Json<ProjectFile>,
+) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
+
+    match app_state
+        .container
+        .project
+        .update_mvp(
+            &mvp.id.to_string(),
+            File {
+                name: mvp.name.clone(),
+                src: mvp.src.clone(),
+            },
+        )
+        .await
+    {
+        Ok(doc) => match doc.unwrap() {
+            doc => {
+                if !doc.is_empty() {
+                    match app_state
+                        .container
+                        .project
+                        .refactor_one_by_id(&doc.get_object_id("_id").unwrap().to_string())
+                        .await
+                    {
+                        Ok(cursor) => {
+                            let projects: Vec<ProjectResponseModel> = cursor
+                                .map(|doc| {
+                                    let project =
+                                        bson::from_document::<ProjectDeserializeModel>(match doc {
+                                            Ok(project) => match project {
+                                                project => project,
+                                            },
+                                            Err(_mongodb_error) => bson::Document::new(),
+                                        })
+                                        .ok();
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
@@ -503,112 +565,21 @@ async fn add_proposal_project(
     }
 }
 
-#[put("project/mvp/add")]
-async fn add_mvp_project(
-    app_state: web::Data<crate::AppState>,
-    mut parts: Parts,
-) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let form_data = parts.texts.as_hash_map();
-
-    let file_name = parts
-        .files
-        .take("file")
-        .pop()
-        .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/projects_files"))
-                .ok()
-        })
-        .unwrap()
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
-
-    match app_state
-        .container
-        .project
-        .update_mvp(
-            &form_data["id"].to_string(),
-            File {
-                name: file_name.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/projects_files/{}", file_name.clone()),
-            },
-        )
-        .await
-    {
-        Ok(doc) => match doc.unwrap() {
-            doc => {
-                if !doc.is_empty() {
-                    match app_state
-                        .container
-                        .project
-                        .refactor_one_by_id(&doc.get_object_id("_id").unwrap().to_string())
-                        .await
-                    {
-                        Ok(cursor) => {
-                            let projects: Vec<ProjectResponseModel> = cursor
-                                .map(|doc| {
-                                    let project =
-                                        bson::from_document::<ProjectDeserializeModel>(match doc {
-                                            Ok(project) => match project {
-                                                project => project,
-                                            },
-                                            Err(_mongodb_error) => bson::Document::new(),
-                                        })
-                                        .ok();
-                                 
-                                    ProjectResponseModel::build_project(project.unwrap())
-                                })
-                                .collect()
-                                .await;
-                            if !projects.is_empty() {
-                                Ok(HttpResponse::Ok().json(projects))
-                            } else {
-                                Err(ContentBuilderCustomResponseError::NotFound)
-                            }
-                        }
-                        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-                    }
-                } else {
-                    Err(ContentBuilderCustomResponseError::NotFound)
-                }
-            }
-        },
-        Err(_mongodb_error) => Err(ContentBuilderCustomResponseError::InternalError),
-    }
-}
-
 #[put("project/design/add")]
 async fn add_design_project(
     app_state: web::Data<crate::AppState>,
-    mut parts: Parts,
+    design:Json<ProjectFile>,
 ) -> Result<HttpResponse, ContentBuilderCustomResponseError> {
-    let form_data = parts.texts.as_hash_map();
-
-    let file_name = parts
-        .files
-        .take("file")
-        .pop()
-        .and_then(|file| {
-            file.persist_in(PathBuf::from("./static/uploads/projects_files"))
-                .ok()
-        })
-        .unwrap()
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
+  
 
     match app_state
         .container
         .project
         .update_design(
-            &form_data["id"].to_string(),
+            &design.id.to_string(),
             File {
-                name: file_name.clone(),
-                src: format!("https://astrobuild-builder-service-v1.herokuapp.com/media/static/uploads/projects_files/{}", file_name.clone()),
+                name: design.name.clone(),
+                src:design.src.clone(),
             },
         )
         .await
@@ -633,13 +604,12 @@ async fn add_design_project(
                                             Err(_mongodb_error) => bson::Document::new(),
                                         })
                                         .ok();
-                             
                                     ProjectResponseModel::build_project(project.unwrap())
                                 })
                                 .collect()
                                 .await;
                             if !projects.is_empty() {
-                                Ok(HttpResponse::Ok().json(projects))
+                                Ok(HttpResponse::Ok().json(projects.last()))
                             } else {
                                 Err(ContentBuilderCustomResponseError::NotFound)
                             }
